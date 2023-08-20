@@ -1,10 +1,13 @@
 import base64
-from bs4 import BeautifulSoup
-import requests
-from lxml import etree
+import re
 import json
 from datetime import datetime
-import re
+import requests
+
+from bs4 import BeautifulSoup
+from lxml import etree
+
+from processor.screen import draw_post_crawler, init_stdsrc
 
 api_url = 'https://justfor.fans/ajax/getPosts.php?UserID={userid}&Type=All&StartAt={seq}&Source=Home&UserHash4={hash}'
 
@@ -35,7 +38,7 @@ def encode_post_id(post_id):
 def get_page_posts(userid, user_hash, seq):
     url = api_url.format(userid=userid, hash=user_hash, seq=seq)
     r = requests.get(url, timeout=10)
-    soup = BeautifulSoup(r.content)
+    soup = BeautifulSoup(r.content, features="lxml")
     dom = etree.HTML(str(soup))
     posts = dom.xpath("/html/body/div[contains(@class, 'jffPostClass')]")
     
@@ -71,6 +74,7 @@ def get_page_posts(userid, user_hash, seq):
     return parsed_posts
 
 def get_posts(userid, user_hash):
+    stdscr = init_stdsrc()
     posts = []
 
     has_more = True
@@ -81,6 +85,8 @@ def get_posts(userid, user_hash):
             has_more = False
         posts.extend(new_posts)
         seq = len(posts)
-        print("Total posts: {}".format(len(posts)))
+        draw_post_crawler(stdscr, seq, len(posts))
+        
+
     
     return posts

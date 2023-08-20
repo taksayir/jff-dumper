@@ -1,6 +1,8 @@
 import os
 import time
 
+from processor.helper import clean_file_name, ensure_dir
+
 def get_size(path):
     if not os.path.isfile(path):
         return "n/a"
@@ -14,11 +16,29 @@ def get_size(path):
     elif size < pow(1024,4):
         return f"{round(size/(pow(1024,3)), 2)} GB"
 
+def get_file_name(post):
+    date = post['timestamp'].split('T')[0]
+    file_name = f"{date} {post['id_raw']}-{post['text']}"
+    return file_name
 
-def report_file_size(file_list: list):
-    while True:
-        final = "\r"
-        for each in file_list:
-            final += str(get_size(each).rjust(10)) + "\t"
-        print(final, end="")
-        time.sleep(1)
+def get_full_video_path(post):
+    file_name = get_file_name(post)
+    directory = os.path.join(os.path.dirname(__file__), ".." , "output", post['poster_name'])
+    full_path = os.path.join(directory, clean_file_name(file_name + ".mp4"))
+    return full_path
+
+def get_full_meta_path(post):
+    file_name = get_file_name(post)
+    directory = os.path.join(os.path.dirname(__file__), ".." , "output", post['poster_name'])
+    full_meta_path = os.path.join(directory, clean_file_name(file_name + ".json") )
+    return full_meta_path
+
+def get_temp_dir(profile_id):
+    directory = os.path.join(os.path.dirname(__file__), ".." , "temp", profile_id)
+    ensure_dir(directory)
+    return directory
+
+def get_temp_file_path(profile_id, file_name):
+    directory = get_temp_dir(profile_id)
+    full_path = os.path.join(directory, file_name)
+    return full_path
