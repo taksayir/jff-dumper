@@ -13,12 +13,12 @@ download_status = {
     "pending": []
 }
 
-sema = threading.Semaphore(value=10)
+sema = threading.Semaphore(value=20)
 
-def execute_stream(posts: list):
+def execute_stream(posts: list, preferred_resolution: int = 720):
     threads = list()
     for post in posts:
-        post_thread = threading.Thread(target = async_stream, args = (post, ))
+        post_thread = threading.Thread(target = async_stream, args = (post, preferred_resolution))
         threads.append(post_thread)
         post_thread.start()
 
@@ -46,7 +46,7 @@ def read_or_init_meta(post, meta_path):
     return metadata
 
 
-def async_stream(post):
+def async_stream(post, preferred_resolution):
     full_path = get_full_video_path(post)
     full_meta_path = get_full_meta_path(post)
     download_status['pending'].append(post)
@@ -61,8 +61,8 @@ def async_stream(post):
     download_status['in_progress'].append(post)
 
     if not is_done:
-        hls_url = get_closest_resolution(post, preferred_resolution=1080, higher_only=True)
-        stream = ffmpeg.input(hls_url).output(full_path).global_args('-loglevel', 'quiet').global_args('-y')
+        hls_url = get_closest_resolution(post, preferred_resolution=preferred_resolution, higher_only=True)
+        stream = ffmpeg.input(hls_url).output(full_path, vcodec='copy').global_args('-loglevel', 'quiet').global_args('-y')
         ffmpeg.run(stream)
 
         metadata['status'] = 'done'

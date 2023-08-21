@@ -3,6 +3,15 @@ import os
 import re
 from typing import Dict
 
+def deEmojify(text):
+    regrex_pattern = re.compile(pattern = "["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                           "]+", flags = re.UNICODE)
+    return regrex_pattern.sub(r'',text)
+
 def save_json_to_file(json_data, file_name):
     ensure_dir(file_name)
     with open(file_name, 'w') as outfile:
@@ -16,7 +25,8 @@ def load_json_from_file(file_name):
 
 def clean_file_name(input_name, max_length=255):
     name, extension = input_name.rsplit('.', 1)
-    cleaned_name = re.sub(r'[\\/:*?"<>|]', '_', name)
+    cleaned_name = deEmojify(re.sub(r'[\\/:*?"<>|]', '_', name)).rstrip()
+    cleaned_name = re.sub(r'\n', ' ', cleaned_name)
     cleaned_extension = re.sub(r'[\\/:*?"<>|]', '_', extension)
     max_name_length = max_length - len(cleaned_extension) - 1 
     cleaned_name = cleaned_name[:max_name_length]

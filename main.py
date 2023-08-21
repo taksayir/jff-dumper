@@ -12,8 +12,7 @@ def main(argv):
     load_dotenv()
     PROFILE_ID = os.getenv('PROFILE_ID')
     USER_HASH = os.getenv('USER_HASH')
-    HIGHER_RESOLUTION_ONLY = os.getenv('HIGHER_RESOLUTION_ONLY') == 'true'
-    PREFERED_RESOLUTION = os.getenv('PREFERED_RESOLUTION')
+    PREFERED_RESOLUTION = int(os.getenv('PREFERED_RESOLUTION', '720'))
 
 
     cached_post_path = get_temp_file_path(PROFILE_ID, 'posts.json')
@@ -23,7 +22,7 @@ def main(argv):
         posts = get_posts(PROFILE_ID, USER_HASH)
         save_json_to_file(posts, cached_post_path)
 
-    execute_stream(posts)
+    execute_stream(posts, PREFERED_RESOLUTION)
 
 
     # screen_threads.remove(x)
