@@ -63,25 +63,26 @@ def display_string(input_string, max_length):
     return truncated.rjust(max_length)
 
 def second_to_duration(seconds):
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    seconds = seconds % 60
+    months = int(seconds / (30 * 24 * 3600))
+    days = int(seconds / (24 * 3600))
+    hours = int(seconds / 3600)
+    minutes = int(seconds / 60)
+    seconds = int(seconds % 60)
 
-    hours_string = f"{hours}h" if hours > 0 else ""
-    minutes_string = f"{minutes}m" if minutes > 0 else ""
-    seconds_string = f"{seconds}s" if seconds > 0 else ""
+    duration_array = []
+    months_string = f"{months}M" if months > 0 else None
+    days_string = f"{days}d" if days > 0 else None
+    hours_string = f"{hours}h" if hours > 0 else None
+    minutes_string = f"{minutes}m" if minutes > 0 else None
+    seconds_string = f"{seconds}s" if seconds > 0 else None
+    duration_array = [months_string, days_string, hours_string, minutes_string, seconds_string]
+    duration_array = [x for x in duration_array if x is not None]
 
-    return f"{hours_string}{minutes_string}{seconds_string}" 
+    return "".join(duration_array[0:2])
 
-def duration_to_second(duration):
-    duration_hours = re.findall(r"(\d+)h", duration)
-    duration_minutes = re.findall(r"(\d+)m", duration)
-    duration_seconds = re.findall(r"(\d+)s", duration)
-    duration_total_seconds = duration_hours * 3600 + duration_minutes * 60 + duration_seconds
-    return duration_total_seconds
 
 def get_relative_time(timestamp):
     now = datetime.now()
-    post_time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
+    post_time = datetime.fromisoformat(timestamp)
     diff = now - post_time
     return second_to_duration(diff.total_seconds()) + " ago"

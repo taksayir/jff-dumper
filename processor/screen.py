@@ -40,7 +40,7 @@ def draw_post_stream(download_status):
             full_path = get_full_path(post, "mp4")
             file_name = full_path.split(os.sep)[-1]
             file_size = get_size(full_path)
-            completed_ago = get_relative_time(datetime.fromisoformat(metadata['completed_at']))
+            completed_ago = get_relative_time(metadata['completed_at'])
             final_string = "\t".join([
                 display_string(file_name, 50),
                 display_string(metadata['resolution'], 10),
@@ -52,8 +52,8 @@ def draw_post_stream(download_status):
                 "display_text": final_string
             })
         completed_posts.sort(key=lambda x: x['completed_at'], reverse=True)
-        for post in completed_posts[0:5]:
-            stdscr.addstr(current_row, 2, "✅ " + final_string)
+        for post in completed_posts[0:3]:
+            stdscr.addstr(current_row, 2, "✓ " + final_string)
             current_row += 1
 
         # In progress
@@ -70,7 +70,7 @@ def draw_post_stream(download_status):
                 display_string(post['duration'], 15),
                 display_string(file_size, 15)
             ])
-            progress_icon = Spinners.arrow3.value['frames'][int(time.time() * 10) % len(Spinners.arrow3.value['frames'])]
+            progress_icon = Spinners.arc.value['frames'][int(time.time() * 10) % len(Spinners.arc.value['frames'])]
             stdscr.addstr(current_row, 2, progress_icon + " " + final_string)
             current_row += 1
 
