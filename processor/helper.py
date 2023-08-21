@@ -46,13 +46,18 @@ def get_closest_resolution(post: Dict, preferred_resolution: int, higher_only: b
         key_mapper[int(number_only)] = post['playlist'][each]
     
     resolution_keys = key_mapper.keys()
-    if higher_only:
-        resolution_keys = [x for x in resolution_keys if x >= preferred_resolution]
+    prefered_resolution_keys = [x for x in resolution_keys if x >= preferred_resolution]
 
-    if len(resolution_keys) == 0:
-        max_resolution = max(key_mapper.keys())
-        resolution_keys = [max_resolution]
+    if len(prefered_resolution_keys) == 0:
+        return key_mapper[max(resolution_keys)]
 
-    nearest_resolution_index = min(range(len(resolution_keys)), key=lambda i: abs(resolution_keys[i]-preferred_resolution))
-    nearest_resolution = resolution_keys[nearest_resolution_index]
+    nearest_resolution_index = min(range(len(prefered_resolution_keys)), key=lambda i: abs(prefered_resolution_keys[i]-preferred_resolution))
+    nearest_resolution = prefered_resolution_keys[nearest_resolution_index]
     return key_mapper[nearest_resolution]
+
+def truncate_string(input_string, max_length):
+    truncate_suffix = "..."
+    if len(input_string) <= max_length:
+        return input_string
+    string_length = max_length - len(truncate_suffix)
+    return input_string[:string_length] + truncate_suffix
