@@ -1,4 +1,5 @@
 import base64
+import os
 import re
 import json
 from datetime import datetime
@@ -6,12 +7,14 @@ import requests
 
 from bs4 import BeautifulSoup
 from lxml import etree
-
+from processor.helper import get_closest_resolution, second_to_duration
 from processor.screen import draw_post_crawler, init_stdsrc
 
-api_url = 'https://justfor.fans/ajax/getPosts.php?UserID={userid}&Type=All&StartAt={seq}&Source=Home&UserHash4={hash}'
 
-def get_playlist(text):
+api_url = 'https://justfor.fans/ajax/getPosts.php?UserID={userid}&Type=All&StartAt={seq}&Source=Home&UserHash4={hash}'
+preferred_resolution = int(os.getenv('PREFERRED_RESOLUTION', '720'))
+
+def parse_playlist(text):
     playlists_obj = "{" + text[text.find('{')+1:text.rfind('}')] + "}"
     playlists = json.loads(playlists_obj)
     return playlists
@@ -48,7 +51,7 @@ def get_page_posts(userid, user_hash, seq):
         if len(playlist_els) == 0:
             continue
         playlist_raw = playlist_els[0]
-        playlist = get_playlist(playlist_raw)
+        playlist = parse_playlist(playlist_raw)
 
         timestamp_els = each.xpath(".//div[@class='mbsc-card-subtitle']/text()")
         if len(timestamp_els) == 0:
@@ -63,15 +66,30 @@ def get_page_posts(userid, user_hash, seq):
         meta_raw = meta_els[0]
         meta = parse_meta(meta_raw)
 
+        duration_els = each.xpath(".//div[@class='post-video-runtime']/text()")
+        if len(duration_els) == 0:
+            continue
+        duration_raw = duration_els[0].strip()
+        duration_hours = int((re.findall(r"(\d+) hour", duration_raw) or ["0"]).pop())
+        duration_minutes = int((re.findall(r"(\d+) minute", duration_raw) or ["0"]).pop())
+        duration_seconds = int((re.findall(r"(\d+) second", duration_raw) or ["0"]).pop())
+        total_seconds = duration_hours * 3600 + duration_minutes * 60 + duration_seconds
+
+        [selected_resolution, url] = get_closest_resolution(playlist, preferred_resolution=preferred_resolution)
+
         parsed_posts.append({
-            "id": encode_post_id(meta['post_id']),
-            "id_raw": meta['post_id'],
+            "id": meta['post_id'],
             "poster_name": meta['poster_name'],
-            "playlist": playlist,
             "text": text,
+            "resolution": selected_resolution,
+            "url": url,
+            "duration": second_to_duration(total_seconds),
             "timestamp": datetime.strptime(timestamp, "%B %d, %Y, %I:%M %p").isoformat()
         })
-    return parsed_posts
+    
+    parsed_posts.sort(key=lambda x: x['timestamp'], reverse=True)
+
+    return (parsed_posts, len(posts))
 
 def get_posts(userid, user_hash):
     stdscr = init_stdsrc()
@@ -80,12 +98,12 @@ def get_posts(userid, user_hash):
     has_more = True
     seq = 0
     while has_more:
-        new_posts = get_page_posts(userid, user_hash, seq)
-        if len(new_posts) == 0:
+        [new_parsed_posts, new_posts_count] = get_page_posts(userid, user_hash, seq)
+        if new_posts_count == 0:
             has_more = False
-        posts.extend(new_posts)
-        seq = len(posts)
-        draw_post_crawler(stdscr, seq, len(posts))
+        posts.extend(new_parsed_posts)
+        seq += new_posts_count
+        draw_post_crawler(stdscr, total_parsed_posts=seq, total_posts=len(posts))
         
 
     

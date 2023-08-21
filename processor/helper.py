@@ -1,16 +1,8 @@
+from datetime import datetime
 import json
 import os
 import re
-from typing import Dict
-
-def deEmojify(text):
-    regrex_pattern = re.compile(pattern = "["
-        u"\U0001F600-\U0001F64F"  # emoticons
-        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
-        u"\U0001F680-\U0001F6FF"  # transport & map symbols
-        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
-                           "]+", flags = re.UNICODE)
-    return regrex_pattern.sub(r'',text)
+from cleantext import clean
 
 def save_json_to_file(json_data, file_name):
     ensure_dir(file_name)
@@ -25,8 +17,9 @@ def load_json_from_file(file_name):
 
 def clean_file_name(input_name, max_length=255):
     name, extension = input_name.rsplit('.', 1)
-    cleaned_name = deEmojify(re.sub(r'[\\/:*?"<>|]', '_', name)).rstrip()
+    cleaned_name = re.sub(r'[\\/:*?"<>|]', '_', name).rstrip()
     cleaned_name = re.sub(r'\n', ' ', cleaned_name)
+    cleaned_name = clean(cleaned_name, no_emoji=True)
     cleaned_extension = re.sub(r'[\\/:*?"<>|]', '_', extension)
     max_name_length = max_length - len(cleaned_extension) - 1 
     cleaned_name = cleaned_name[:max_name_length]
@@ -37,23 +30,26 @@ def ensure_dir(file_path):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-def get_closest_resolution(post: Dict, preferred_resolution: int, higher_only: bool = False):
-    key_mapper = {}
-    for each in post['playlist']:
+def get_closest_resolution(playlist, preferred_resolution: int):
+    key_int_mapper = {}
+    for each in playlist:
         number_only = re.sub("[^0-9]", "", each)
         if number_only == "":
             continue
-        key_mapper[int(number_only)] = post['playlist'][each]
+        key_int_mapper[int(number_only)] = each
     
-    resolution_keys = key_mapper.keys()
-    prefered_resolution_keys = [x for x in resolution_keys if x >= preferred_resolution]
+    all_resolutions = list(key_int_mapper.keys())
+    filtered_resolutions = [x for x in all_resolutions if x >= preferred_resolution]
 
-    if len(prefered_resolution_keys) == 0:
-        return key_mapper[max(resolution_keys)]
+    if len(filtered_resolutions) > 0:
+        selected_resolution_index = min(range(len(filtered_resolutions)), key=lambda i: abs(filtered_resolutions[i]-preferred_resolution))
+        selected_resolution = filtered_resolutions[selected_resolution_index]
+    else:
+        selected_resolution = max(all_resolutions)
 
-    nearest_resolution_index = min(range(len(prefered_resolution_keys)), key=lambda i: abs(prefered_resolution_keys[i]-preferred_resolution))
-    nearest_resolution = prefered_resolution_keys[nearest_resolution_index]
-    return key_mapper[nearest_resolution]
+    selected_original_resolution = key_int_mapper[selected_resolution]
+
+    return (selected_original_resolution, playlist[selected_original_resolution])
 
 def truncate_string(input_string, max_length):
     truncate_suffix = "..."
@@ -61,3 +57,31 @@ def truncate_string(input_string, max_length):
         return input_string
     string_length = max_length - len(truncate_suffix)
     return input_string[:string_length] + truncate_suffix
+
+def display_string(input_string, max_length):
+    truncated = truncate_string(input_string, max_length)
+    return truncated.rjust(max_length)
+
+def second_to_duration(seconds):
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
+
+    hours_string = f"{hours}h" if hours > 0 else ""
+    minutes_string = f"{minutes}m" if minutes > 0 else ""
+    seconds_string = f"{seconds}s" if seconds > 0 else ""
+
+    return f"{hours_string}{minutes_string}{seconds_string}" 
+
+def duration_to_second(duration):
+    duration_hours = re.findall(r"(\d+)h", duration)
+    duration_minutes = re.findall(r"(\d+)m", duration)
+    duration_seconds = re.findall(r"(\d+)s", duration)
+    duration_total_seconds = duration_hours * 3600 + duration_minutes * 60 + duration_seconds
+    return duration_total_seconds
+
+def get_relative_time(timestamp):
+    now = datetime.now()
+    post_time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
+    diff = now - post_time
+    return second_to_duration(diff.total_seconds()) + " ago"

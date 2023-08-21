@@ -16,22 +16,16 @@ def get_size(path):
     elif size < pow(1024,4):
         return f"{round(size/(pow(1024,3)), 2)} GB"
 
-def get_file_name(post):
+def get_raw_file_name(post):
     date = post['timestamp'].split('T')[0]
-    file_name = f"{date} {post['id_raw']}-{post['text']}"
+    file_name = f"{date} {post['text']}"
     return file_name
 
-def get_full_video_path(post):
-    file_name = get_file_name(post)
+def get_full_path(post, ext: str):
+    file_name = get_raw_file_name(post)
     directory = os.path.join(os.path.dirname(__file__), ".." , "output", post['poster_name'])
-    full_path = os.path.join(directory, clean_file_name(file_name + ".mp4"))
+    full_path = os.path.join(directory, clean_file_name(f"{file_name}.{ext}"))
     return full_path
-
-def get_full_meta_path(post):
-    file_name = get_file_name(post)
-    directory = os.path.join(os.path.dirname(__file__), ".." , "output", post['poster_name'])
-    full_meta_path = os.path.join(directory, clean_file_name(file_name + ".json") )
-    return full_meta_path
 
 def get_temp_dir(profile_id):
     directory = os.path.join(os.path.dirname(__file__), ".." , "temp", profile_id)

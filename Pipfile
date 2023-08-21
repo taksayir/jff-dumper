@@ -10,6 +10,9 @@ lxml = "*"
 ffmpeg-python = "*"
 python-dotenv = "*"
 windows-curses = "*"
+clean-text = "*"
+unidecode = "*"
+spinners = "*"
 
 [dev-packages]
 
