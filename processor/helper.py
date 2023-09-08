@@ -18,7 +18,7 @@ def load_json_from_file(file_name):
 def clean_file_name(input_name, max_length=255):
     name, extension = input_name.rsplit('.', 1)
     cleaned_name = re.sub(r'[\\/:*?"<>|]', '_', name).rstrip()
-    cleaned_name = re.sub(r'\n', ' ', cleaned_name)
+    cleaned_name = cleaned_name.replace("\n", "_")
     cleaned_name = clean(cleaned_name, no_emoji=True)
     cleaned_extension = re.sub(r'[\\/:*?"<>|]', '_', extension)
     max_name_length = max_length - len(cleaned_extension) - 1 
