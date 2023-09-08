@@ -4,9 +4,13 @@ import time
 from processor.helper import clean_file_name, ensure_dir
 
 def get_size(path):
+    human_str = 'n/a'
     if not os.path.isfile(path):
-        return "n/a"
+        return 0, human_str
     size = os.path.getsize(path)
+    return size, convert_to_human_readable(size)
+
+def convert_to_human_readable(size):
     if size < 1024:
         return f"{size} bytes"
     elif size < pow(1024,2):
@@ -23,6 +27,8 @@ def get_raw_file_name(post):
 
 def get_full_path(post, ext: str):
     file_name = get_raw_file_name(post)
+    if '"' in file_name:
+        print(f"WARNING: Newline in file name: {file_name}")
     directory = os.path.join(os.path.dirname(__file__), ".." , "output", post['poster_name'])
     full_path = os.path.join(directory, clean_file_name(f"{file_name}.{ext}"))
     return full_path

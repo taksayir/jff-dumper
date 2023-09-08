@@ -22,7 +22,7 @@ def execute_stream(posts: list):
         post_thread = threading.Thread(target = async_stream, args = (post, ), daemon=True)
         threads.append(post_thread)
         post_thread.start()
-        time.sleep(0.05)
+        time.sleep(0.01)
 
     report_thread = threading.Thread(target = draw_post_stream, args = (download_status, ), daemon=True)
     report_thread.start()
@@ -80,4 +80,5 @@ def async_stream(post):
 def prepare_stream(posts):
     for post in posts:
         full_path = get_full_path(post, "mp4")
-        ensure_dir(full_path)
+        directory = ensure_dir(full_path)
+    return directory

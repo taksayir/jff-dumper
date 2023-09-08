@@ -17,9 +17,10 @@ def load_json_from_file(file_name):
 
 def clean_file_name(input_name, max_length=255):
     name, extension = input_name.rsplit('.', 1)
-    cleaned_name = re.sub(r'[\\/:*?"<>|]', '_', name).rstrip()
-    cleaned_name = cleaned_name.replace("\n", "_")
-    cleaned_name = clean(cleaned_name, no_emoji=True)
+    cleaned_name = clean(name, no_emoji=True, lower=False, no_line_breaks=True)
+    cleaned_name = re.sub(r'[\\/:*?"<>|]', '_', cleaned_name).rstrip()
+    cleaned_name = cleaned_name.replace("\n", " ")
+    cleaned_name = cleaned_name.replace('"', " ")
     cleaned_extension = re.sub(r'[\\/:*?"<>|]', '_', extension)
     max_name_length = max_length - len(cleaned_extension) - 1 
     cleaned_name = cleaned_name[:max_name_length]
@@ -29,6 +30,7 @@ def ensure_dir(file_path):
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
+    return directory
 
 def get_closest_resolution(playlist, preferred_resolution: int):
     key_int_mapper = {}
@@ -58,8 +60,10 @@ def truncate_string(input_string, max_length):
     string_length = max_length - len(truncate_suffix)
     return input_string[:string_length] + truncate_suffix
 
-def display_string(input_string, max_length):
+def display_string(input_string, max_length, is_left_aligned=False):
     truncated = truncate_string(input_string, max_length)
+    if is_left_aligned:
+        return truncated.ljust(max_length)
     return truncated.rjust(max_length)
 
 def second_to_duration(seconds):
