@@ -14,9 +14,16 @@ download_status = {
     "pending": []
 }
 
+user_agent ='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+
 sema = threading.Semaphore(value=20)
+is_sequential = False
 
 def execute_stream(posts: list):
+    if is_sequential:
+        for post in posts:
+            async_stream(post)
+        return
     threads = list()
     for post in posts:
         post_thread = threading.Thread(target = async_stream, args = (post, ), daemon=True)
@@ -59,7 +66,7 @@ def async_stream(post):
     should_download = not is_done
 
     if should_download:
-        stream = ffmpeg.input(post['url']).output(full_video_path, vcodec='copy').global_args('-loglevel', 'quiet').global_args('-y')
+        stream = ffmpeg.input(post['url'], user_agent=user_agent).output(full_video_path, vcodec='copy').global_args('-loglevel', 'debug').global_args('-y')
         if os.path.exists(full_video_path):
             os.remove(full_video_path)
         try:

@@ -10,8 +10,8 @@ from lxml import etree
 from processor.helper import get_closest_resolution, second_to_duration
 from processor.screen import draw_post_crawler, init_stdsrc
 
-
-api_url = 'https://justfor.fans/ajax/getPosts.php?UserID={userid}&Type=All&StartAt={seq}&Source=Home&UserHash4={hash}'
+api_url = 'https://justfor.fans/ajax/getPosts.php?Type=One&UserID={userid}&PosterID={posterid}&StartAt={seq}&Page=Profile&UserHash4={hash}&SplitTest=0'
+# api_url = 'https://justfor.fans/ajax/getPosts.php?UserID={userid}&Type=All&StartAt={seq}&Source=Home&UserHash4={hash}'
 preferred_resolution = int(os.getenv('PREFERRED_RESOLUTION', '720'))
 
 def parse_playlist(text):
@@ -38,13 +38,13 @@ def encode_post_id(post_id):
     alphanumeric_string = base64.b64encode(number_bytes).decode('utf-8')
     return alphanumeric_string
 
-def get_page_posts(userid, user_hash, seq):
-    url = api_url.format(userid=userid, hash=user_hash, seq=seq)
+def get_page_posts(userid, user_hash, seq, poster_id):
+    url = api_url.format(userid=userid, hash=user_hash, seq=seq, posterid=poster_id)
     r = requests.get(url, timeout=10)
     soup = BeautifulSoup(r.content, features="lxml")
     dom = etree.HTML(str(soup))
     posts = dom.xpath("/html/body/div[contains(@class, 'jffPostClass')]")
-    
+
     parsed_posts = []
     for each in posts:
         playlist_els = each.xpath(".//div[@class='videoBlock']/a/@onclick")
@@ -77,6 +77,13 @@ def get_page_posts(userid, user_hash, seq):
 
         [selected_resolution, url] = get_closest_resolution(playlist, preferred_resolution=preferred_resolution)
 
+        try:
+            timestamp_str = datetime.strptime(timestamp, "%B %d, %Y, %I:%M %p").isoformat()
+        except Exception as e:
+            timestamp_str = 'NA'
+            print(f"Failed to parse timestamp: {timestamp}")
+            print(e)
+        
         parsed_posts.append({
             "id": meta['post_id'],
             "poster_name": meta['poster_name'],
@@ -84,21 +91,21 @@ def get_page_posts(userid, user_hash, seq):
             "resolution": selected_resolution,
             "url": url,
             "duration": second_to_duration(total_seconds),
-            "timestamp": datetime.strptime(timestamp, "%B %d, %Y, %I:%M %p").isoformat()
+            "timestamp": timestamp_str
         })
     
     parsed_posts.sort(key=lambda x: x['timestamp'], reverse=True)
 
     return (parsed_posts, len(posts))
 
-def get_posts(userid, user_hash):
+def get_posts(userid, user_hash, poster_id):
     stdscr = init_stdsrc()
     posts = []
 
     has_more = True
     seq = 0
     while has_more:
-        [new_parsed_posts, new_posts_count] = get_page_posts(userid, user_hash, seq)
+        [new_parsed_posts, new_posts_count] = get_page_posts(userid, user_hash, seq, poster_id)
         if new_posts_count == 0:
             has_more = False
         posts.extend(new_parsed_posts)

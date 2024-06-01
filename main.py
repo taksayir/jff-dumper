@@ -11,13 +11,14 @@ def main(argv):
     load_dotenv()
     profile_id = os.getenv('PROFILE_ID')
     user_hash = os.getenv('USER_HASH')
+    poster_id = os.getenv('POSTER_ID')
 
 
     cached_post_path = get_temp_file_path(profile_id, 'posts.json')
     if os.path.exists(cached_post_path):
         posts = load_json_from_file(cached_post_path)
     else:
-        posts = get_posts(profile_id, user_hash)
+        posts = get_posts(profile_id, user_hash, poster_id)
         save_json_to_file(posts, cached_post_path)
     
     # posts = get_posts(profile_id, user_hash)
